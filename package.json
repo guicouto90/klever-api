@@ -1,0 +1,38 @@
+{
+  "name": "klever-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./api/server.js",
+  "scripts": {
+    "test": "mocha ./tests/**/*$NAME*.{test,spec}.js --exit",
+    "lint": "eslint --no-inline-config --no-error-on-unmatched-pattern -c .eslintrc.json .",
+    "dev": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guicouto90/klever-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/guicouto90/klever-api/issues"
+  },
+  "homepage": "https://github.com/guicouto90/klever-api#readme",
+  "dependencies": {
+    "@hapi/joi": "^17.1.1",
+    "crypto": "^1.0.1",
+    "express": "^4.18.1",
+    "http-status-codes": "^2.2.0",
+    "mongodb": "^4.5.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "chai-http": "^4.3.0",
+    "eslint": "^8.14.0",
+    "mocha": "^10.0.0",
+    "mongodb-memory-server": "^8.5.2",
+    "nodemon": "^2.0.16",
+    "sinon": "^13.0.2"
+  }
+}
