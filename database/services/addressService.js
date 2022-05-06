@@ -13,6 +13,7 @@ const createAddress = async () => {
       confirmed: "0",
       unconfirmed: "0"
     },
+    utxos: [],
     total: {
       sent: "0",
       received: "0"
