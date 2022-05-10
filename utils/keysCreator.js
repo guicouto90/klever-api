@@ -18,12 +18,18 @@ const publicKey = (key) => {
 
   const bech32Words = bech32.toWords(Buffer.from(ripedm160Hash, 'hex'));
   console.log(`Bech32WORDS: ${bech32Words}`);
-  const words = new Uint8Array([0, ...bech32Words]);
-  console.log(`words: ${words}`);
+  const words = [0, ...bech32Words];
   const result = bech32.encode("bc", words);
   console.log(`result: ${result}`);
+
   return result;
 };
+
+const txIdCreator = (payload) => {
+  const sha256Hash = crypto.createHash('sha256').update(payload).digest('hex');
+
+  return sha256Hash;
+}
 
 // bc1qyzxdu4px4jy8gwhcj82zpv7qzhvc0fvumgnh0r
 // bc11qzu6h69n27h5hj9n9aaqdf2242nvt0znfeqgf5s
@@ -35,5 +41,6 @@ const publicKey = (key) => {
 
 module.exports = {
   publicKey,
-  privateKey
+  privateKey,
+  txIdCreator
 };

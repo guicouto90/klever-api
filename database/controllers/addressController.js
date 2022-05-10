@@ -1,13 +1,16 @@
-const { OK } = require("../../utils/statusCode");
+const { CREATED } = require("../../utils/statusCode");
 const { createAddress } = require("../services/addressService");
 
 const newAddress = async (req, res, next) => {
   try {
-    const result = await createAddress();
+    const { password } = req.body;
+    const result = await createAddress(password);
 
-    return res.status(OK).json(result);
+    return res.status(CREATED).json(result);
   } catch (error) {
+    console.error(error.message);
     next(error);
+    
   }
 };
 
