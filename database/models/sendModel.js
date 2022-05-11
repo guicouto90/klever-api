@@ -22,9 +22,26 @@ const updateTx = async (addresses, confirmation, _id) => {
   )
 };
 
+const updateConfirmation = async (confirmation, _id) => {
+  const connect = await connection();
+  await connect.collection('txs').updateOne(
+    { "_id": ObjectId(_id) },
+    { $set: { confirmation }}
+  )
+}
+
+const findTxByTxid = async(txid) => {
+  const connect = await connection();
+  const result = await connect.collection('txs').findOne({ txid });
+
+  return result;
+}
+
 module.exports = {
   findAllTx,
   insertTx,
   updateTx,
+  updateConfirmation,
+  findTxByTxid
 }
 

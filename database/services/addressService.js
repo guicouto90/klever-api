@@ -28,10 +28,12 @@ const createFirstAddress = async (password) => {
     total: { sent: "0", received: firstValue.toString() }
   }
 
-  const payloadTx = { addresses: [{ address, value: firstValue.toString()} ], block: 0, txid, confirmation: 3 }
+  const addresses = [{ address, value: firstValue.toString()} ];
+  const block = 0;
+  const confirmation = 3; 
   
   await insertAddress(newAddress);
-  await insertTx(payloadTx);
+  await insertTx(addresses, block, txid, confirmation);
 
   return { 
     'Private key': key, 

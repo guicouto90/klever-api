@@ -1,3 +1,4 @@
+const { ObjectId } = require('mongodb');
 const connection = require('./connection');
 
 const insertAddress = async (payload) => {
@@ -29,17 +30,32 @@ const findAllAdresses = async () => {
 
 const updateBalance = async (address, balanceTotal, balance, totalTx, total) => {
   const connect = await connection();
-  const teste = await connect.collection('addresses').updateOne(
+  await connect.collection('addresses').updateOne(
     { address },
     { $set: { balanceTotal, balance, totalTx, total }}
   )
-  return teste;
 }
 
-const updateUtxos = async(address, utxos) => {
+const updateConfirmedBalance = async(_id, balance) => {
   const connect = await connection();
   await connect.collection('addresses').updateOne(
-    { address },
+    { "_id": ObjectId(_id) },
+    { $set: { balance }}
+  )
+}
+
+const updateUnconfirmedBalance = async(_id, balance, total) => {
+  const connect = await connection();
+  await connect.collection('addresses').updateOne(
+    { "_id": ObjectId(_id) },
+    { $set: { balance, total }}
+  )
+}
+
+const updateUtxos = async(_id, utxos) => {
+  const connect = await connection();
+  await connect.collection('addresses').updateOne(
+    { "_id": ObjectId(_id) },
     { $set: { utxos } }
   )
 }
@@ -50,5 +66,7 @@ module.exports = {
   findAllAdresses,
   updateBalance,
   updateUtxos,
-  findAddressByPrivateKey
+  findAddressByPrivateKey,
+  updateConfirmedBalance,
+  updateUnconfirmedBalance
 };
