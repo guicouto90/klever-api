@@ -36,8 +36,8 @@ const createFirstAddress = async (password) => {
   await insertTx(addresses, block, txid, confirmation);
 
   return { 
-    'Private key': key, 
-    'Public key': address 
+    'address': address,
+    'privateKey': key, 
   };
 }
 
@@ -60,7 +60,10 @@ const createAddress = async (password) => {
       total: { sent: "0", received: "0" }
     }
     await insertAddress(newAddress);
-    return { 'Private key': key, 'Public key': address };
+    return { 
+      'address': address,
+      'privateKey': key, 
+    };
   }
 }
 

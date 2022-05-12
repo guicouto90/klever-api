@@ -3,7 +3,18 @@ const { notEnoughBalance, TxidNotValid, addressNotFound, forbbidenAddress, value
 const { txIdCreator } = require("../../utils/keysCreator");
 const { BAD_REQUEST, NOT_FOUND } = require("../../utils/statusCode");
 const { findAddressComplete, updateBalance, findAddressByPrivateKey, updateUtxos, updateConfirmedBalance, updateUnconfirmedBalance } = require("../models/addressModel");
-const { findAllTx, insertTx, updateTx, findTxByTxid, updateConfirmation } = require("../models/sendModel")
+const { findAllTx, insertTx, updateTx, findTxByTxid, updateConfirmation } = require("../models/sendModel");
+const joi = require('@hapi/joi');
+
+const sendSchema = joi.object({
+  address: joi.string().required().not().empty(),
+  amount: joi.string().required().not().empty()
+})
+
+const validateSend = (address, amount) => {
+  const { error } = sendSchema.validate({ address, amount });
+  if(error) throw error;
+}
 
 // Get all tx registered;
 const getAllTx = async () => {
@@ -230,6 +241,7 @@ const newTx = async (payload, sentAddress, txs) => {
 // Register a new TX, and edit if the key "confirmation" of the block is less than 3.
 const createTx = async (payload, privateKey) => {
   const { address, amount } = payload;
+  validateSend(address, amount);
   const sentAddress = await findAddressByPrivateKey(privateKey);
   const txs = await getAllTx();
   await verifyAddress(address, sentAddress.address);

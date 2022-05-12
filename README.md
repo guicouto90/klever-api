@@ -12,10 +12,11 @@ It's about a technical challenge related to a selective process for Klever Excha
 
 ## Use instructions:
 
-Clone the repository and install the dependencies with command "npm install".
-The command npm start is used to run the application. The application will use the port 3001.
-The command npm test is used to run the integration tests.
-The aplication was developed using principles of MSC arquitecture.
+- Clone the repository and install the dependencies with command "npm install".
+- The command npm start is used to run the application. The application will use the port 3001.
+- The command npm test is used to run the integration tests.
+- The aplication was developed using principles of MSC arquitecture.
+- You must create .env file containing property "SECRET" with a password, which will create the JWToken.
 
 ## The challenge:
 
@@ -169,16 +170,15 @@ This is a return of a list of address that spent/receive money in this transacti
 
   ## Things to do soon:
   - More tests, try to focus more on unit tests;
-  - "Dockerizar" the app;
+  - "Dockerizar" the application;
   - Fix a bug that happens when utxo value is less than amount of transfer;
-  - Replace mongo DB for a related DB.
-   
+  - Replace mongo DB for a relational Database.
+  - Deploy on Heroku;
   
   ## Contact
   Any doubt or sugestion, please contact me by:
   - Email: gui.couto90@yahoo.com.br
   - LinkedIn: https://www.linkedin.com/in/guicouto90/
-  
   
   
  

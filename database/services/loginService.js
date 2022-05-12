@@ -1,14 +1,14 @@
 const { generateToken } = require("../../middlewares/auth");
 const errorContructor = require("../../utils/errorContructor");
 const { invalidPasswordOrAddress } = require("../../utils/errorMessages");
-const { NOT_FOUND } = require("../../utils/statusCode");
+const { UNAUTHORIZED } = require("../../utils/statusCode");
 const joi = require('@hapi/joi');
 const { findAddressComplete } = require("../models/addressModel");
 
 const loginSchema = joi.object({
   address: joi.string().required(),
   privateKey: joi.string().required(),
-  password: joi.string().required()
+  password: joi.string().min(6).required()
 })
 
 const validateLogin = (address, privateKey, password) => {
@@ -19,7 +19,7 @@ const validateLogin = (address, privateKey, password) => {
 const verifyLogin = async (address, privateKey, password) => {
   const result = await findAddressComplete(address);
   if(!result || result.password !== password || result.privateKey !== privateKey) {
-    throw errorContructor(NOT_FOUND, invalidPasswordOrAddress);
+    throw errorContructor(UNAUTHORIZED, invalidPasswordOrAddress);
   }
   
   return result;
