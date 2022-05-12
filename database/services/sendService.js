@@ -1,16 +1,18 @@
 const errorContructor = require("../../utils/errorContructor");
-const { notEnoughBalance, TxidNotValid } = require("../../utils/errorMessages");
+const { notEnoughBalance, TxidNotValid, addressNotFound, forbbidenAddress, valueNotAllowed } = require("../../utils/errorMessages");
 const { txIdCreator } = require("../../utils/keysCreator");
 const { BAD_REQUEST, NOT_FOUND } = require("../../utils/statusCode");
 const { findAddressComplete, updateBalance, findAddressByPrivateKey, updateUtxos, updateConfirmedBalance, updateUnconfirmedBalance } = require("../models/addressModel");
 const { findAllTx, insertTx, updateTx, findTxByTxid, updateConfirmation } = require("../models/sendModel")
 
+// Get all tx registered;
 const getAllTx = async () => {
   const result = await findAllTx();
 
   return result;
 };
 
+// Verify if tx exists;
 const verifyTx = async(txid) => {
   const result = await findTxByTxid(txid);
   if(!result) {
@@ -20,6 +22,25 @@ const verifyTx = async(txid) => {
   return result;
 }
 
+// Verify if received address and sent address are valid 
+const verifyAddress = async(address, sentAddress) => {
+  const result = await findAddressComplete(address);
+  if(!result) {
+    throw errorContructor(NOT_FOUND, addressNotFound);
+  }
+  if(result.address === sentAddress) {
+    throw errorContructor(BAD_REQUEST, forbbidenAddress)
+  }
+}
+
+// Verify if value is not less or equal 0;
+const verifyValue = (value) => {
+  if(Number(value) <= 0) {
+    throw errorContructor(BAD_REQUEST, valueNotAllowed);
+  }
+}
+
+// Verify if who is sending has enough balance to do it.
 const verifyBalance = async (sentAddress, amount) => {
   const { balance: { confirmed } } = await findAddressComplete(sentAddress);
   if(Number(confirmed) < Number(amount)) {
@@ -27,6 +48,8 @@ const verifyBalance = async (sentAddress, amount) => {
   }
 }
 
+// Method that makes the transfer value between two address envolved.
+// Whole keys that are envolved with values are updated.
 const transferValue = async (sentAddress, receivedAddress, amount) => {
   //Sent update
   const newBalanceSent = (Number(sentAddress.balance.confirmed) - Number(amount)).toString();
@@ -40,7 +63,7 @@ const transferValue = async (sentAddress, receivedAddress, amount) => {
 
   //Received update
   const newBalanceReceived = (Number(receivedAddress.balance.unconfirmed) + Number(amount)).toString();
-  const balanceReceived = { confirmed: receivedAddress.balance.confirmed, unconfirmed: newBalanceReceived.toString()}
+  const balanceReceived = { confirmed: receivedAddress.balance.confirmed, unconfirmed: newBalanceReceived }
   const finalBalanceReceived = (Number(receivedAddress.balance.confirmed) + Number(newBalanceReceived)).toString();
   const totalTxReceived = receivedAddress.totalTx + 1;
   const totalReceived = (Number(receivedAddress.total.received) + Number(amount)).toString();
@@ -50,6 +73,13 @@ const transferValue = async (sentAddress, receivedAddress, amount) => {
 
 }
 
+// Verify the UTXOs on address that is sending the value;
+// If an specific UTXO has a value bigger than amount, this UTOX is going to be deleted, and added
+// a new one, with the "change" balance.
+// If the amount sent is bigger than one UTXO. One or more UTXO is going to be added to become bigger
+// than amount sent. Then the UTXOs selected are going to be deleted, and added a new one with the
+// "change".
+// At the end the new UTXOs will be returned.
 const verifyUtxoSent = (utxos, value, txid, confirmation) => {
   let total = 0;
   let newUtxos = [];
@@ -69,6 +99,8 @@ const verifyUtxoSent = (utxos, value, txid, confirmation) => {
       if(total < Number(value)) {
         total += Number(amount);
         utxos.splice(index, 1);
+        console.log(utxos)
+        console.log(`Total: ${total}`);
       }
     })
     total = total - Number(value);
@@ -77,33 +109,42 @@ const verifyUtxoSent = (utxos, value, txid, confirmation) => {
   return newUtxos;
 }
 
+// Build a new utxo for the address wich received the value;
 const editUtxosReceived = async (utxos, value, txid, confirmation, _id) => {
   const newUtxos = [... utxos, { txid, amount: value, confirmation }]
   await updateUtxos(_id, newUtxos);
 }
 
+// Edit the whole balance of sent address, when has a "change" to be received.
 const editUnconfirmedBalanceSent = async(balance, total, value, _id) => {
   const newUnconfirmed = (Number(value) + Number(balance.unconfirmed)).toString();
-  const newConfirmed = (Number(value) - Number(balance.confirmed)).toString()
+  let newConfirmed = 0;
+  if(Number(balance.confirmed) > Number(value)) {
+    newConfirmed = (Number(balance.confirmed) - Number(value)).toString();
+  } else {
+    newConfirmed = (Number(value) - Number(balance.confirmed)).toString();
+  }
   const newBalance = { confirmed: newConfirmed, unconfirmed: newUnconfirmed };
   const newReceived = (Number(total.received) + Number(value)).toString();
   const newTotal = { sent: total.received, received: newReceived }
   await updateUnconfirmedBalance(_id, newBalance, newTotal);
 }
 
+// Update the Utxos of sent address.
 const editUtxosSent = async(utxos, value, txid, confirmation, _id) => {
   const newUtxosSent = verifyUtxoSent(utxos, value, txid, confirmation);
   await updateUtxos(_id, newUtxosSent);
   return newUtxosSent[newUtxosSent.length - 1].amount;
 }
 
+// Change the key "confirmation" of utxo, which has the same txid of the block registered,
+// when it is changed. The return is the utxos updated.
 const editUtxoConfirmation = (utxos, confirmation, txid) => {
   const newUtxos = [];
+  let index = 0;
   for(const utxo of utxos) {
-    let index = 0;
     if(utxo.txid === txid) {
       const newUtxo = { txid, amount: utxo.amount, confirmation };
-      utxos.splice(index, 1);
       newUtxos.push(newUtxo);
     } else {
       newUtxos.push(utxo);
@@ -113,17 +154,24 @@ const editUtxoConfirmation = (utxos, confirmation, txid) => {
   return newUtxos;
 }
 
+//
+// REF: https://pt.stackoverflow.com/questions/16483/remover-elementos-repetido-dentro-de-um-array-em-javascript
+// Update the key "confirmation" on utxos of the whole addresses registered on an specific txid.
 const addressesSpecificTxid = async(addresses, confirmation, txid) => {
+  const resultAddresses = [];
   for(const address of addresses) {
-    const result = await findAddressComplete(address.address);
-    console.log(result)
+    resultAddresses.push(address.address);
+  }
+  const newArray = resultAddresses.filter((address, index) => resultAddresses.indexOf(address) === index);
+  for(const address of newArray) {
+    const result = await findAddressComplete(address);
     const newUtxos = editUtxoConfirmation(result.utxos, confirmation, txid);
-    console.log(newUtxos);
     await updateUtxos(result._id, newUtxos);
   }
 }
 
 //REF: https://stackoverflow.com/questions/37576685/using-async-await-with-a-foreach-loop
+// Update confirmed balance when it necessary.
 const editConfirmedBalance = async(addresses) => {
   for (const address of addresses) {
     const { balance: { confirmed, unconfirmed }, _id } = await findAddressComplete(address.address);
@@ -134,47 +182,78 @@ const editConfirmedBalance = async(addresses) => {
   }
 }
 
+// Edit an specif tx, that has confirmation < 3;
+// Add more tx on addresses field;
+const editSpecificTx = async (payload, sentAddress, txs) => {
+  const { confirmation, addresses, _id, txid } = txs[txs.length - 1];
+  const { address, amount } = payload;
+
+  const destinationAddress = await findAddressComplete(address);
+  const txReceived = { address, value: amount };
+  await transferValue(sentAddress, destinationAddress, amount);
+  const sentAddressUpdated = await findAddressComplete(sentAddress.address);
+  const totalReceived = await editUtxosSent(sentAddressUpdated.utxos, amount, txid, confirmation, sentAddressUpdated._id);
+  await editUnconfirmedBalanceSent(sentAddressUpdated.balance, sentAddressUpdated.total, totalReceived, sentAddressUpdated._id);
+  const txSent = { address: sentAddressUpdated.address, value: totalReceived }
+  const newArray = [... addresses, txReceived, txSent];
+  await updateTx(newArray, confirmation, _id);
+  await editUtxosReceived(destinationAddress.utxos, amount, txid, confirmation, destinationAddress._id);
+
+  return { message: `Tx ${txid} completed` };
+}
+
+// Create a new Tx;
+const newTx = async (payload, sentAddress, txs) => {
+  const { block, txid } = txs[txs.length - 1];
+  const { address, amount } = payload;
+
+  const destinationAddress = await findAddressComplete(address);
+  const resultPayload = txid.concat(amount, address);
+  const newTxId = txIdCreator(resultPayload);
+  const newBlock = block + 1;
+  const newConfirmation = 0;
+  const txReceived = { address, value: amount };
+  const newAddresses = []
+  newAddresses.push(txReceived);
+  await transferValue(sentAddress, destinationAddress, amount);
+  const sentAddressUpdated = await findAddressComplete(sentAddress.address);
+  const totalReceived = await editUtxosSent(sentAddressUpdated.utxos, amount, newTxId, newConfirmation, sentAddressUpdated._id);
+  await editUnconfirmedBalanceSent(sentAddressUpdated.balance, sentAddressUpdated.total, totalReceived, sentAddressUpdated._id);
+  const txSent = { address: sentAddressUpdated.address, value: totalReceived }
+  newAddresses.push(txSent);
+  await insertTx(newAddresses, newBlock, newTxId, newConfirmation);
+  await editUtxosReceived(destinationAddress.utxos, amount, newTxId, newConfirmation, destinationAddress._id);
+
+  return { message: `Tx ${newTxId} completed` };
+}
+
+// Register a new TX, and edit if the key "confirmation" of the block is less than 3.
 const createTx = async (payload, privateKey) => {
   const { address, amount } = payload;
   const sentAddress = await findAddressByPrivateKey(privateKey);
   const txs = await getAllTx();
+  await verifyAddress(address, sentAddress.address);
   await verifyBalance(sentAddress.address, amount);
-  const { confirmation, addresses, block, _id, txid } = txs[txs.length - 1];
+  verifyValue(amount);
+  const { confirmation } = txs[txs.length - 1];
   if(confirmation < 3) {
-    const destinationAddress = await findAddressComplete(address);
-    const txReceived = { address, value: amount };
-    const newArray = [... addresses, txReceived];
-    await updateTx(newArray, confirmation, _id);
-    await transferValue(sentAddress, destinationAddress, amount);
-    const sentAddressUpdated = await findAddressByPrivateKey(privateKey);
-    const totalReceived = await editUtxosSent(sentAddressUpdated.utxos, amount, txid, confirmation, sentAddressUpdated._id);
-    await editUnconfirmedBalanceSent(sentAddressUpdated.balance, sentAddressUpdated.total, totalReceived, sentAddressUpdated._id);
-    await editUtxosReceived(destinationAddress.utxos, amount, txid, confirmation, destinationAddress._id);
-    return { message: `Tx ${txid} completed` };
-
+    const response = await editSpecificTx(payload, sentAddress, txs);
+    return response;
   } else {
-    if(confirmation >= 3 && block !== 0) {
-      await editConfirmedBalance(addresses);
-    }
-    const destinationAddress = await findAddressComplete(address);
-    const resultPayload = txid.concat(amount, address);
-    const newTxId = txIdCreator(resultPayload);
-    const newBlock = block + 1;
-    const newConfirmation = 0;
-    const txReceived = { address, value: amount };
-    const newAddresses = []
-    newAddresses.push(txReceived);
-    await transferValue(sentAddress, destinationAddress, amount);
-    await insertTx(newAddresses, newBlock, newTxId, newConfirmation);
-
-    return { message: `Tx ${newTxId} completed` };
+    const response = await newTx(payload, sentAddress, txs);
+    return response;
   }
 }
 
+// Update confirmation field on a specific transaction
+// Update confirmation field on utxos which are registered on this block transaction
 const editConfirmation = async(txid) => {
-  const {_id, addresses, confirmation} = await verifyTx(txid);
+  const {_id, addresses, confirmation } = await verifyTx(txid);
   const newConfirmation = confirmation + 1;
-  await addressesSpecificTxid(addresses, confirmation, txid);
+  if(newConfirmation === 3) {
+    await editConfirmedBalance(addresses);
+  }
+  await addressesSpecificTxid(addresses, newConfirmation, txid);
   await updateConfirmation(newConfirmation, _id);
 }
 
