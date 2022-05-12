@@ -6,6 +6,7 @@ const detailsRouter = require('../routers/detailsRouter');
 const loginRouter = require('../routers/loginRouter');
 const sendRouter = require('../routers/sendRouter');
 const txRouter = require('../routers/txRouter');
+const utxosRouter = require('../routers/utxosRouter');
 const app = express();
 
 app.use(express.json());
@@ -20,7 +21,9 @@ app.use('/balance', balanceRouter);
 
 app.use('/send', sendRouter);
 
-app.use('/tx', txRouter)
+app.use('/tx', txRouter);
+
+app.use('/utxos', utxosRouter);
 
 app.use(errorHandler);
 

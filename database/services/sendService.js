@@ -105,17 +105,21 @@ const verifyUtxoSent = (utxos, value, txid, confirmation) => {
   });
   if(total === 0) {
     console.log("TA AQUI?")
+    let finalTotal = 0;
     utxos.forEach((utxo, index) => {
       const { amount } = utxo;
-      if(total < Number(value)) {
-        total += Number(amount);
-        utxos.splice(index, 1);
-        console.log(utxos)
-        console.log(`Total: ${total}`);
+      total += Number(amount);
+      if(total > Number(value)) {
+        utxos.splice(0, index + 1);
+        finalTotal = total;
       }
     })
-    total = total - Number(value);
-    newUtxos = [... utxos, { txid, amount: total.toString(), confirmation }]
+    console.log(`Total antes da subtracao: ${finalTotal}`)
+    console.log(`Valor que está sendo subtraido com o total: ${Number(value)}`)
+    finalTotal = finalTotal - Number(value);
+    console.log(`Total depois subtracao: ${finalTotal}`);
+    newUtxos = [... utxos, { txid, amount: finalTotal.toString(), confirmation }]
+    console.log(newUtxos);
   }
   return newUtxos;
 }
@@ -129,12 +133,7 @@ const editUtxosReceived = async (utxos, value, txid, confirmation, _id) => {
 // Edit the whole balance of sent address, when has a "change" to be received.
 const editUnconfirmedBalanceSent = async(balance, total, value, _id) => {
   const newUnconfirmed = (Number(value) + Number(balance.unconfirmed)).toString();
-  let newConfirmed = 0;
-  if(Number(balance.confirmed) > Number(value)) {
-    newConfirmed = (Number(balance.confirmed) - Number(value)).toString();
-  } else {
-    newConfirmed = (Number(value) - Number(balance.confirmed)).toString();
-  }
+  const newConfirmed = (Number(balance.confirmed) - Number(value)).toString();
   const newBalance = { confirmed: newConfirmed, unconfirmed: newUnconfirmed };
   const newReceived = (Number(total.received) + Number(value)).toString();
   const newTotal = { sent: total.received, received: newReceived }

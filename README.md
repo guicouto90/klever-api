@@ -167,6 +167,23 @@ This is a return of a list of address that spent/receive money in this transacti
 	    "txid": "307ff065a270c7df5af6cff0d3fecd46f1635660e471afa534e1adcf0da56a6d"
     }
     ```
+  
+  #### UTXOS:
+  This route is used to list the utxos registered for an specific address.
+  - Method get('/utxos/:address'). The :address has to be an address already registered.
+    The return will be like the example bellow:
+    ```json
+       {
+	      "utxos": 
+          [
+		        {
+			        "txid": "223d75271dce5abc006a9de40e6a8d145d75f4174c81e5bdb4f0eef61218da9c",
+			         "amount": "12059413",
+			         "confirmation": 3
+		        }
+	        ] 
+       }
+    ```
 
   ## Things to do soon:
   - More tests, try to focus more on unit tests;
