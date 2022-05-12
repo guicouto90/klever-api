@@ -16,7 +16,7 @@ It's about a technical challenge related to a selective process for Klever Excha
 - The command npm start is used to run the application. The application will use the port 3001.
 - The command npm test is used to run the integration tests.
 - The aplication was developed using principles of MSC arquitecture.
-- You must create .env file containing property "SECRET" with a password, which will create the JWToken.
+- You must create .env file containing property "SECRET" with a password, which will create the JWToken. EXAMPLE: SECRET=KLEVER_API
 
 ## The challenge:
 

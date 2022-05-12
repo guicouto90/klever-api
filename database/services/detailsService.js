@@ -18,7 +18,6 @@ const validateAddress = async (address) => {
 };
 
 const getByAddress = async (address) => {
-  console.log(address);
   await validateAddress(address);
   const result = await findByAddress(address);
 

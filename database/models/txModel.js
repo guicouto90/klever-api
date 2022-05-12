@@ -1,7 +1,6 @@
 const connection = require('./connection');
 
 const findTxByTxid = async(txid) => {
-  console.log(txid)
   const connect = await connection();
   const result = await connect.collection('txs').findOne(
     { txid },

@@ -95,7 +95,6 @@ const verifyUtxoSent = (utxos, value, txid, confirmation) => {
   let total = 0;
   let newUtxos = [];
   utxos.forEach((utxo, index) => {
-    console.log("TA AQUI2?")
     const { amount } = utxo;
     if(Number(amount) >= Number(value)) {
       total = Number(amount) - Number(value); //Valor do novo UTXO de sobra do remetente;
@@ -104,7 +103,6 @@ const verifyUtxoSent = (utxos, value, txid, confirmation) => {
     }
   });
   if(total === 0) {
-    console.log("TA AQUI?")
     let finalTotal = 0;
     utxos.forEach((utxo, index) => {
       const { amount } = utxo;
@@ -114,12 +112,8 @@ const verifyUtxoSent = (utxos, value, txid, confirmation) => {
         finalTotal = total;
       }
     })
-    console.log(`Total antes da subtracao: ${finalTotal}`)
-    console.log(`Valor que está sendo subtraido com o total: ${Number(value)}`)
     finalTotal = finalTotal - Number(value);
-    console.log(`Total depois subtracao: ${finalTotal}`);
     newUtxos = [... utxos, { txid, amount: finalTotal.toString(), confirmation }]
-    console.log(newUtxos);
   }
   return newUtxos;
 }
