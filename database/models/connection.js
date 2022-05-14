@@ -1,6 +1,6 @@
 const mongodb = require('mongodb').MongoClient;
 
-const MONGO_DB_URL = 'mongodb://localhost:27017/DigitalRepublic';
+const MONGO_DB_URL = process.env.MONGODB_URI || 'mongodb://localhost:27017/klever';
 const DB_NAME = 'klever';
 
 module.exports = () => mongodb.connect(MONGO_DB_URL, {
