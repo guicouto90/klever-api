@@ -17,6 +17,7 @@ It's about a technical challenge related to a selective process for Klever Excha
 - The command npm test is used to run the integration tests.
 - The aplication was developed using principles of MSC arquitecture.
 - You must create .env file containing property "SECRET" with a password, which will create the JWToken. EXAMPLE: SECRET=KLEVER_API
+- Here is the link of the heroku deploy: https://klever-api.herokuapp.com/
 
 ## The challenge:
 
@@ -188,9 +189,8 @@ This is a return of a list of address that spent/receive money in this transacti
   ## Things to do soon:
   - More tests, try to focus more on unit tests;
   - "Dockerizar" the application;
-  - Fix a bug that happens when utxo value is less than amount of transfer;
+  - Fix a bug that happens when there is one more transaction from the same address on the same block;
   - Replace mongo DB for a relational Database.
-  - Deploy on Heroku;
   
   ## Contact
   Any doubt or sugestion, please contact me by:
